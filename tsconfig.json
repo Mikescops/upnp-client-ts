@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "lib": ["ES2021"],
+        "experimentalDecorators": true,
+        "isolatedModules": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "types": ["node"]
+    }
+}
