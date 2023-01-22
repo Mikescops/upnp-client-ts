@@ -113,7 +113,7 @@ export class UpnpDeviceClient extends EventEmitter {
     callAction = async (
         serviceId: string,
         actionName: string,
-        params: Record<string, string>
+        params: Record<string, string | number>
     ): Promise<UpnpClientResponse> => {
         serviceId = resolveService(serviceId);
 
@@ -134,7 +134,7 @@ export class UpnpDeviceClient extends EventEmitter {
         const action = et.SubElement(body, 'u:' + actionName);
         action.set('xmlns:u', service.serviceType);
 
-        Object.keys(params).forEach(function (paramName) {
+        Object.keys(params).forEach((paramName) => {
             const tmp = et.SubElement(action, paramName);
             const value = params[paramName];
             tmp.text = value === null ? '' : params[paramName].toString();

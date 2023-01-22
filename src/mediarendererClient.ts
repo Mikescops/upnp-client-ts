@@ -80,7 +80,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         //
         const lines = response.Sink.split(',');
 
-        const protocols = lines.map(function (line) {
+        const protocols = lines.map((line) => {
             const tmp = line.split(':');
             return {
                 protocol: tmp[0],
@@ -95,7 +95,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
     getPosition = async (): Promise<number> => {
         const response = await this.callAction('AVTransport', 'GetPositionInfo', {
-            InstanceID: this.instanceId.toString()
+            InstanceID: this.instanceId
         });
 
         const strTime = response.AbsTime !== 'NOT_IMPLEMENTED' ? response.AbsTime : response.RelTime;
@@ -104,7 +104,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
     getDuration = async (): Promise<number> => {
         const response = await this.callAction('AVTransport', 'GetMediaInfo', {
-            InstanceID: this.instanceId.toString()
+            InstanceID: this.instanceId
         });
 
         return parseTime(response.MediaDuration);
@@ -112,7 +112,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
     getMediaInfo = (): Promise<UpnpClientResponse> => {
         return this.callAction('AVTransport', 'GetMediaInfo', {
-            InstanceID: this.instanceId.toString()
+            InstanceID: this.instanceId
         });
     };
 
@@ -122,7 +122,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         const paramsPrepareForConnection = {
             RemoteProtocolInfo: metadata.metadata.protocolInfo,
             PeerConnectionManager: null,
-            PeerConnectionID: '-1',
+            PeerConnectionID: -1,
             Direction: 'Input'
         };
 
@@ -139,7 +139,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             });
 
         const paramsSetAVTransportURI = {
-            InstanceID: this.instanceId.toString(),
+            InstanceID: this.instanceId,
             CurrentURI: url,
             CurrentURIMetaData: metadata.xml
         };
@@ -159,7 +159,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         }
 
         const params = {
-            InstanceID: this.instanceId.toString(),
+            InstanceID: this.instanceId,
             NextURI: url,
             NextURIMetaData: buildMetadata(url, options.metadata, options).xml
         };
@@ -169,29 +169,29 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
     play = (): Promise<UpnpClientResponse> => {
         const params = {
-            InstanceID: this.instanceId.toString(),
-            Speed: '1'
+            InstanceID: this.instanceId,
+            Speed: 1
         };
         return this.callAction('AVTransport', 'Play', params);
     };
 
     pause = async () => {
         const params = {
-            InstanceID: this.instanceId.toString()
+            InstanceID: this.instanceId
         };
         await this.callAction('AVTransport', 'Pause', params);
     };
 
     stop = async () => {
         const params = {
-            InstanceID: this.instanceId.toString()
+            InstanceID: this.instanceId
         };
         await this.callAction('AVTransport', 'Stop', params);
     };
 
     seek = (seconds: number): Promise<UpnpClientResponse> => {
         const params = {
-            InstanceID: this.instanceId.toString().toString(),
+            InstanceID: this.instanceId,
             Unit: 'REL_TIME',
             Target: formatTime(seconds)
         };
@@ -200,7 +200,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
     getVolume = async (): Promise<number> => {
         const response = await this.callAction('RenderingControl', 'GetVolume', {
-            InstanceID: this.instanceId.toString().toString(),
+            InstanceID: this.instanceId,
             Channel: 'Master'
         });
         return parseInt(response.CurrentVolume);
@@ -208,16 +208,16 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
     setVolume = async (volume: number): Promise<void> => {
         const params = {
-            InstanceID: this.instanceId.toString().toString(),
+            InstanceID: this.instanceId,
             Channel: 'Master',
-            DesiredVolume: volume.toString()
+            DesiredVolume: volume
         };
         await this.callAction('RenderingControl', 'SetVolume', params);
     };
 
     getTransportInfo = (): Promise<UpnpClientResponse> => {
         return this.callAction('AVTransport', 'GetTransportInfo', {
-            InstanceID: this.instanceId.toString().toString()
+            InstanceID: this.instanceId
         });
     };
 }

@@ -2,9 +2,9 @@ import et from 'elementtree';
 import { ActionArgument, DeviceDescription, Icon, Service, ServiceDescription, UpnpEvent } from '../types';
 import { extractFields, extractBaseUrl, buildAbsoluteUrl } from './helpers';
 
-export const parseEvents = (buf: Buffer): UpnpEvent[] => {
+export const parseEvents = (eventsBuffer: Buffer): UpnpEvent[] => {
     const events: UpnpEvent[] = [];
-    let doc = et.parse(buf.toString());
+    let doc = et.parse(eventsBuffer.toString());
 
     const lastChange = doc.findtext('.//LastChange');
     if (lastChange) {
@@ -15,7 +15,7 @@ export const parseEvents = (buf: Buffer): UpnpEvent[] => {
         // The `<Event></Event>` element contains one `<InstanceID></InstanceID>`
         // subtree per stream instance reporting its status.
         const instances = doc.findall('./InstanceID');
-        instances.forEach(function (instance) {
+        instances.forEach((instance) => {
             const data = {
                 InstanceID: Number(instance.get('val'))
             };
@@ -106,7 +106,7 @@ export const parseServiceDescription = (xml: string) => {
 
     desc.actions = {};
     const actionNodes = doc.findall('./actionList/action');
-    actionNodes.forEach(function (action) {
+    actionNodes.forEach((action) => {
         const name = action.findtext('./name').toString();
         const inputs: ActionArgument[] = [];
         const outputs: ActionArgument[] = [];
