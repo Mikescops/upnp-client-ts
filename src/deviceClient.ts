@@ -32,21 +32,16 @@ export class UpnpDeviceClient extends EventEmitter {
 
         this.url = url;
         this.deviceDescription = null;
-        this.serviceDescriptions = null;
+        this.serviceDescriptions = {};
         this.server = null;
         this.listening = false;
         this.subscriptions = {};
     }
 
     getDeviceDescription = async (): Promise<DeviceDescription> => {
-        const deviceDescription = this.deviceDescription;
-
         // Use cache if available
         if (this.deviceDescription) {
-            process.nextTick(() => {
-                return deviceDescription;
-            });
-            return;
+            return this.deviceDescription;
         }
 
         logger('fetch device description');
@@ -57,8 +52,6 @@ export class UpnpDeviceClient extends EventEmitter {
     };
 
     getServiceDescription = async (serviceId: string): Promise<ServiceDescription> => {
-        const serviceDescriptions = this.serviceDescriptions;
-
         serviceId = resolveService(serviceId);
 
         const deviceDescription = await this.getDeviceDescription();
@@ -69,8 +62,8 @@ export class UpnpDeviceClient extends EventEmitter {
         }
 
         // Use cache if available
-        if (serviceDescriptions[serviceId]) {
-            return serviceDescriptions[serviceId];
+        if (this.serviceDescriptions[serviceId]) {
+            return this.serviceDescriptions[serviceId];
         }
 
         logger('fetch service description (%s)', serviceId);
@@ -176,16 +169,16 @@ export class UpnpDeviceClient extends EventEmitter {
         }
 
         // ... and ensuring the event server is created and listening
-        this.ensureEventingServer();
+        await this.ensureEventingServer();
 
         const options = urlToHttpOptions(new URL(service.eventSubURL));
         const serverAddress = this.server.address() as { address: string; port: number };
 
         options.method = 'SUBSCRIBE';
         options.headers = {
-            HOST: options.host,
+            HOST: options.hostname,
             'USER-AGENT': `${OS_VERSION} UPnP/1.1 ${PACKAGE_VERSION}`,
-            CALLBACK: `<http://${serverAddress['address']}:${serverAddress['port']} />`,
+            CALLBACK: `<http://${serverAddress['address']}:${serverAddress['port']}/>`,
             NT: 'upnp:event',
             TIMEOUT: `Second-${SUBSCRIPTION_TIMEOUT}`
         };
@@ -194,6 +187,7 @@ export class UpnpDeviceClient extends EventEmitter {
             const response = await doRequest({ requestOptions: options, bodyString: null });
 
             if (response.statusCode !== 200) {
+                console.error(response);
                 const error = new UpnpError('ESUB', `${response.statusCode} - SUBSCRIBE error`);
                 this.releaseEventingServer();
                 this.emit('error', error);
@@ -225,7 +219,7 @@ export class UpnpDeviceClient extends EventEmitter {
         const options = urlToHttpOptions(new URL(service.eventSubURL));
         options.method = 'SUBSCRIBE';
         options.headers = {
-            HOST: options.host,
+            HOST: options.hostname,
             SID: sid,
             TIMEOUT: `Second-${SUBSCRIPTION_TIMEOUT}`
         };
@@ -269,7 +263,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
             options.method = 'UNSUBSCRIBE';
             options.headers = {
-                HOST: options.host,
+                HOST: options.hostname,
                 SID: subscription.sid
             };
 
@@ -293,56 +287,61 @@ export class UpnpDeviceClient extends EventEmitter {
         }
     };
 
-    ensureEventingServer = () => {
-        if (!this.server) {
-            logger('create eventing server');
-            this.server = http.createServer((req, res) => {
-                const chunks: Buffer[] = [];
-                res.on('data', (chunk) => {
-                    chunks.push(chunk as Buffer);
-                });
-                res.on('end', () => {
-                    const sid = req.headers['sid'] as string;
-                    const seq = req.headers['seq'] as string;
-                    const events = parseEvents(Buffer.concat(chunks));
-
-                    logger('received events %s %d %j', sid, seq, events);
-
-                    const keys = Object.keys(this.subscriptions);
-                    const sids = keys.map((key) => {
-                        return this.subscriptions[key].sid;
+    ensureEventingServer = (): Promise<void> => {
+        return new Promise((resolve) => {
+            if (!this.server) {
+                logger('create eventing server');
+                this.server = http.createServer((req, res) => {
+                    const chunks: Buffer[] = [];
+                    res.on('data', (chunk) => {
+                        chunks.push(chunk as Buffer);
                     });
+                    res.on('end', () => {
+                        const sid = req.headers['sid'] as string;
+                        const seq = req.headers['seq'] as string;
+                        const events = parseEvents(Buffer.concat(chunks));
 
-                    const idx = sids.indexOf(sid);
-                    if (idx === -1) {
-                        logger('WARNING unknown SID %s', sid);
-                        // silently ignore unknown SIDs
-                        return;
-                    }
+                        logger('received events %s %d %j', sid, seq, events);
 
-                    const serviceId = keys[idx];
-                    const listeners = this.subscriptions[serviceId].listeners;
+                        const keys = Object.keys(this.subscriptions);
+                        const sids = keys.map((key) => {
+                            return this.subscriptions[key].sid;
+                        });
 
-                    // Dispatch each event to each listener registered for
-                    // this service's events
-                    listeners.forEach(function (listener) {
-                        events.forEach(function (e) {
-                            listener(e);
+                        const idx = sids.indexOf(sid);
+                        if (idx === -1) {
+                            logger('WARNING unknown SID %s', sid);
+                            // silently ignore unknown SIDs
+                            return;
+                        }
+
+                        const serviceId = keys[idx];
+                        const listeners = this.subscriptions[serviceId].listeners;
+
+                        // Dispatch each event to each listener registered for
+                        // this service's events
+                        listeners.forEach(function (listener) {
+                            events.forEach(function (e) {
+                                listener(e);
+                            });
                         });
                     });
                 });
-            });
 
-            this.server.listen(0, address.ipv4());
-        }
+                return this.server.listen(0, address.ipv4(), null, () => {
+                    resolve();
+                });
+            }
 
-        if (!this.listening) {
-            this.server.on('listening', () => {
-                this.listening = true;
-                debug('Server started to listen');
-                return;
-            });
-        }
+            if (!this.listening) {
+                this.server.on('listening', () => {
+                    this.listening = true;
+                    debug('Server started to listen');
+                    return;
+                });
+            }
+            return resolve();
+        });
     };
 
     releaseEventingServer = () => {

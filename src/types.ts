@@ -42,7 +42,7 @@ interface StateVariable {
     dataType: string;
     sendEvents: string;
     allowedValues: string[];
-    defaultValue: string;
+    defaultValue?: string;
 }
 
 export interface ServiceDescription {
@@ -62,6 +62,8 @@ export type UpnpEvent = Record<string, string | number>;
 export type UpnpClientResponse = Record<string, string>;
 
 export type Listener = (event: UpnpEvent) => void;
+
+export type MediaEvents = 'status' | 'loading' | 'playing' | 'paused' | 'stopped' | 'speedChanged';
 
 export interface Metadata {
     title?: string;

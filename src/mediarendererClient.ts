@@ -1,6 +1,6 @@
 import { UpnpDeviceClient } from './deviceClient';
 import { UpnpError } from './errors';
-import { MediaRendererOptions, Protocol, UpnpClientResponse, UpnpEvent } from './types';
+import { MediaEvents, MediaRendererOptions, Protocol, UpnpClientResponse, UpnpEvent } from './types';
 import { buildMetadata } from './utils/builders';
 import { parseTime, formatTime } from './utils/time';
 
@@ -18,7 +18,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         let refs = 0;
         let receivedState;
 
-        this.addListener('newListener', (eventName: string) => {
+        this.addListener('newListener', (eventName: MediaEvents) => {
             if (MEDIA_EVENTS.indexOf(eventName) === -1) return;
             if (refs === 0) {
                 receivedState = false;
@@ -27,7 +27,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             refs++;
         });
 
-        this.addListener('removeListener', (eventName: string) => {
+        this.addListener('removeListener', (eventName: MediaEvents) => {
             if (MEDIA_EVENTS.indexOf(eventName) === -1) {
                 return;
             }
@@ -131,7 +131,9 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
                 }
             })
             .then((connection) => {
-                this.instanceId = Number(connection['AVTransportID']);
+                if (connection) {
+                    this.instanceId = Number(connection['AVTransportID']);
+                }
             });
 
         const paramsSetAVTransportURI = {

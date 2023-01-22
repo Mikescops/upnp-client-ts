@@ -45,8 +45,8 @@ export const parseDeviceDescription = (xml: string, url: string): DeviceDescript
     const doc = et.parse(xml);
 
     const desc: DeviceDescription = {
-        icons: undefined,
-        services: undefined,
+        icons: [],
+        services: {},
         ...extractFields(doc.find('./device'), [
             'deviceType',
             'friendlyName',
@@ -139,7 +139,7 @@ export const parseServiceDescription = (xml: string) => {
             dataType: stateVariable.findtext('./dataType').toString(),
             sendEvents: stateVariable.get('sendEvents'),
             allowedValues,
-            defaultValue: stateVariable.findtext('./defaultValue').toString()
+            defaultValue: stateVariable.findtext('./defaultValue')?.toString()
         };
     });
 
