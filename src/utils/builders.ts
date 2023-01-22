@@ -1,7 +1,29 @@
 import et from 'elementtree';
 import { Metadata } from '../types';
 
-export const buildMetadata = (metadata: Metadata): string => {
+interface BuildMetadataOptions {
+    dlnaFeatures?: string;
+    contentType?: string;
+}
+
+interface BuildMetadataOutput {
+    xml: string;
+    metadata: Metadata;
+}
+
+export const buildMetadata = (
+    url: string,
+    metadata: Metadata | null,
+    options?: BuildMetadataOptions
+): BuildMetadataOutput => {
+    const dlnaFeatures = options.dlnaFeatures ?? '*';
+    const contentType = options.contentType ?? 'video/mpeg'; // Default to something generic
+    const protocolInfo = 'http-get:*:' + contentType + ':' + dlnaFeatures;
+
+    metadata ?? {};
+    metadata.url = url;
+    metadata.protocolInfo = protocolInfo;
+
     const didl = et.Element('DIDL-Lite');
     didl.set('xmlns', 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/');
     didl.set('xmlns:dc', 'http://purl.org/dc/elements/1.1/');
@@ -58,5 +80,5 @@ export const buildMetadata = (metadata: Metadata): string => {
     const doc = new et.ElementTree(didl);
     const xml = doc.write({ xml_declaration: false });
 
-    return xml;
+    return { metadata, xml };
 };

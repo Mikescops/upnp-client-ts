@@ -19,7 +19,9 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         let receivedState;
 
         this.addListener('newListener', (eventName: MediaEvents) => {
-            if (MEDIA_EVENTS.indexOf(eventName) === -1) return;
+            if (MEDIA_EVENTS.indexOf(eventName) === -1) {
+                return;
+            }
             if (refs === 0) {
                 receivedState = false;
                 void this.subscribe('AVTransport', onstatus);
@@ -108,17 +110,17 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         return parseTime(response.MediaDuration);
     };
 
-    load = async (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
-        const dlnaFeatures = options.dlnaFeatures ?? '*';
-        const contentType = options.contentType ?? 'video/mpeg'; // Default to something generic
-        const protocolInfo = 'http-get:*:' + contentType + ':' + dlnaFeatures;
+    getMediaInfo = (): Promise<UpnpClientResponse> => {
+        return this.callAction('AVTransport', 'GetMediaInfo', {
+            InstanceID: this.instanceId.toString()
+        });
+    };
 
-        const metadata = options.metadata ?? {};
-        metadata.url = url;
-        metadata.protocolInfo = protocolInfo;
+    load = async (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
+        const metadata = buildMetadata(url, options.metadata, options);
 
         const paramsPrepareForConnection = {
-            RemoteProtocolInfo: protocolInfo,
+            RemoteProtocolInfo: metadata.metadata.protocolInfo,
             PeerConnectionManager: null,
             PeerConnectionID: '-1',
             Direction: 'Input'
@@ -139,7 +141,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         const paramsSetAVTransportURI = {
             InstanceID: this.instanceId.toString(),
             CurrentURI: url,
-            CurrentURIMetaData: buildMetadata(metadata)
+            CurrentURIMetaData: metadata.xml
         };
 
         const response = await this.callAction('AVTransport', 'SetAVTransportURI', paramsSetAVTransportURI);
@@ -149,6 +151,20 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         }
 
         return response;
+    };
+
+    loadNext = (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
+        if (!this.listening) {
+            throw new Error('No media was loaded first, use load method.');
+        }
+
+        const params = {
+            InstanceID: this.instanceId.toString(),
+            NextURI: url,
+            NextURIMetaData: buildMetadata(url, options.metadata, options).xml
+        };
+
+        return this.callAction('AVTransport', 'SetNextAVTransportURI', params);
     };
 
     play = (): Promise<UpnpClientResponse> => {

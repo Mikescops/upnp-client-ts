@@ -33,9 +33,46 @@ export class UpnpDeviceClient extends EventEmitter {
         this.url = url;
         this.deviceDescription = null;
         this.serviceDescriptions = {};
-        this.server = null;
         this.listening = false;
         this.subscriptions = {};
+
+        this.server = http.createServer((req) => {
+            const chunks: Buffer[] = [];
+            req.on('data', (chunk: Buffer) => {
+                chunks.push(chunk);
+            });
+            req.on('end', () => {
+                const sid = req.headers['sid'] as string;
+                const seq = req.headers['seq'] as string;
+
+                const events = parseEvents(Buffer.concat(chunks));
+
+                logger('received events %s %d %j', sid, seq, events);
+
+                const keys = Object.keys(this.subscriptions);
+                const sids = keys.map((key) => {
+                    return this.subscriptions[key].sid;
+                });
+
+                const idx = sids.indexOf(sid);
+                if (idx === -1) {
+                    logger('WARNING unknown SID %s', sid);
+                    // silently ignore unknown SIDs
+                    return;
+                }
+
+                const serviceId = keys[idx];
+                const listeners = this.subscriptions[serviceId].listeners;
+
+                // Dispatch each event to each listener registered for
+                // this service's events
+                listeners.forEach((listener) => {
+                    events.forEach((e) => {
+                        listener(e);
+                    });
+                });
+            });
+        });
     }
 
     getDeviceDescription = async (): Promise<DeviceDescription> => {
@@ -187,7 +224,6 @@ export class UpnpDeviceClient extends EventEmitter {
             const response = await doRequest({ requestOptions: options, bodyString: null });
 
             if (response.statusCode !== 200) {
-                console.error(response);
                 const error = new UpnpError('ESUB', `${response.statusCode} - SUBSCRIBE error`);
                 this.releaseEventingServer();
                 this.emit('error', error);
@@ -289,58 +325,18 @@ export class UpnpDeviceClient extends EventEmitter {
 
     ensureEventingServer = (): Promise<void> => {
         return new Promise((resolve) => {
-            if (!this.server) {
-                logger('create eventing server');
-                this.server = http.createServer((req, res) => {
-                    const chunks: Buffer[] = [];
-                    res.on('data', (chunk) => {
-                        chunks.push(chunk as Buffer);
-                    });
-                    res.on('end', () => {
-                        const sid = req.headers['sid'] as string;
-                        const seq = req.headers['seq'] as string;
-                        const events = parseEvents(Buffer.concat(chunks));
-
-                        logger('received events %s %d %j', sid, seq, events);
-
-                        const keys = Object.keys(this.subscriptions);
-                        const sids = keys.map((key) => {
-                            return this.subscriptions[key].sid;
-                        });
-
-                        const idx = sids.indexOf(sid);
-                        if (idx === -1) {
-                            logger('WARNING unknown SID %s', sid);
-                            // silently ignore unknown SIDs
-                            return;
-                        }
-
-                        const serviceId = keys[idx];
-                        const listeners = this.subscriptions[serviceId].listeners;
-
-                        // Dispatch each event to each listener registered for
-                        // this service's events
-                        listeners.forEach(function (listener) {
-                            events.forEach(function (e) {
-                                listener(e);
-                            });
-                        });
-                    });
-                });
-
-                return this.server.listen(0, address.ipv4(), null, () => {
-                    resolve();
-                });
-            }
-
             if (!this.listening) {
-                this.server.on('listening', () => {
+                logger('create eventing server');
+                this.server.listen(0, address.ipv4());
+
+                return this.server.on('listening', () => {
                     this.listening = true;
-                    debug('Server started to listen');
-                    return;
+                    logger('Server started to listen');
+                    return resolve();
                 });
+            } else {
+                process.nextTick(() => resolve());
             }
-            return resolve();
         });
     };
 
