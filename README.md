@@ -10,13 +10,13 @@ This project is based on the [awesome work from @thibauts](https://github.com/th
 $ npm install upnp-client
 ```
 
-## Usage
+## Usage of UpnpDeviceClient
 
 ```ts
-import upnpClient from 'upnp-client';
+import upnp from 'upnp-client';
 
 // Instanciate a client with a device description URL (discovered by SSDP)
-const client = new Client('http://192.168.1.50:4873/foo.xml');
+const client = new upnp.UpnpDeviceClient('http://192.168.1.50:4873/foo.xml');
 
 // Get the device description
 const deviceDescription = await client.getDeviceDescription();

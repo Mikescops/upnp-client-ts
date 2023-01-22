@@ -59,4 +59,29 @@ export interface Subscription {
 
 export type UpnpEvent = Record<string, string | number>;
 
+export type UpnpClientResponse = Record<string, string>;
+
 export type Listener = (event: UpnpEvent) => void;
+
+export interface Metadata {
+    title?: string;
+    type?: 'audio' | 'video' | 'image';
+    url?: string;
+    creator?: string;
+    subtitlesUrl?: string;
+    protocolInfo?: string;
+}
+
+export interface Protocol {
+    protocol: string;
+    network: string;
+    contentFormat: string;
+    additionalInfo: string;
+}
+
+export interface MediaRendererOptions {
+    autoplay?: boolean;
+    metadata?: Metadata;
+    dlnaFeatures?: string;
+    contentType?: string;
+}
