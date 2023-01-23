@@ -70,6 +70,10 @@ export interface Metadata {
     type?: 'audio' | 'video' | 'image';
     url?: string;
     creator?: string;
+    artist?: string;
+    album?: string;
+    albumArtURI?: string;
+    genre?: string;
     subtitlesUrl?: string;
     protocolInfo?: string;
 }

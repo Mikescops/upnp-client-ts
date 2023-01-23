@@ -56,6 +56,26 @@ export const buildMetadata = (
         creator.text = metadata.creator;
     }
 
+    if (metadata.artist) {
+        const artist = et.SubElement(item, 'upnp:artist');
+        artist.text = metadata.artist;
+    }
+
+    if (metadata.album) {
+        const album = et.SubElement(item, 'upnp:album');
+        album.text = metadata.album;
+    }
+
+    if (metadata.albumArtURI) {
+        const albumArtURI = et.SubElement(item, 'upnp:albumArtURI');
+        albumArtURI.text = metadata.albumArtURI;
+    }
+
+    if (metadata.genre) {
+        const genre = et.SubElement(item, 'upnp:genre');
+        genre.text = metadata.genre;
+    }
+
     if (metadata.url && metadata.protocolInfo) {
         const res = et.SubElement(item, 'res');
         res.set('protocolInfo', metadata.protocolInfo);
