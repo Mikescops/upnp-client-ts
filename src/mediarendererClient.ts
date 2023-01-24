@@ -1,5 +1,5 @@
 import { UpnpDeviceClient } from './deviceClient';
-import { UpnpError } from './errors';
+import { AVTransportError, UpnpError } from './errors';
 import { MediaEvents, MediaRendererOptions, Protocol, UpnpClientResponse, UpnpEvent } from './types';
 import { buildMetadata } from './utils/builders';
 import { parseTime, formatTime } from './utils/time';
@@ -75,6 +75,14 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         };
     }
 
+    callAVTransport = (actionName: string, params: Record<string, string | number>) =>
+        this.callAction('AVTransport', actionName, params).catch((error) => {
+            if (error instanceof UpnpError && error.extra.errorCode) {
+                throw new AVTransportError(error.extra.errorCode);
+            }
+            throw error;
+        });
+
     getSupportedProtocols = async (): Promise<Protocol[]> => {
         const response = await this.callAction('ConnectionManager', 'GetProtocolInfo', {});
 
@@ -97,7 +105,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
     };
 
     getPosition = async (): Promise<number> => {
-        const response = await this.callAction('AVTransport', 'GetPositionInfo', {
+        const response = await this.callAVTransport('GetPositionInfo', {
             InstanceID: this.instanceId
         });
 
@@ -106,17 +114,13 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
     };
 
     getDuration = async (): Promise<number> => {
-        const response = await this.callAction('AVTransport', 'GetMediaInfo', {
-            InstanceID: this.instanceId
-        });
+        const response = await this.callAVTransport('GetMediaInfo', { InstanceID: this.instanceId });
 
         return parseTime(response.MediaDuration);
     };
 
     getMediaInfo = (): Promise<UpnpClientResponse> => {
-        return this.callAction('AVTransport', 'GetMediaInfo', {
-            InstanceID: this.instanceId
-        });
+        return this.callAVTransport('GetMediaInfo', { InstanceID: this.instanceId });
     };
 
     load = async (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
@@ -147,7 +151,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             CurrentURIMetaData: metadata.xml
         };
 
-        const response = await this.callAction('AVTransport', 'SetAVTransportURI', paramsSetAVTransportURI);
+        const response = await this.callAVTransport('SetAVTransportURI', paramsSetAVTransportURI);
 
         if (options.autoplay) {
             return this.play();
@@ -167,29 +171,22 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             NextURIMetaData: buildMetadata(url, options.metadata, options).xml
         };
 
-        return this.callAction('AVTransport', 'SetNextAVTransportURI', params);
+        return this.callAVTransport('SetNextAVTransportURI', params);
     };
 
     play = (): Promise<UpnpClientResponse> => {
-        const params = {
-            InstanceID: this.instanceId,
-            Speed: 1
-        };
-        return this.callAction('AVTransport', 'Play', params);
+        const params = { InstanceID: this.instanceId, Speed: 1 };
+        return this.callAVTransport('Play', params);
     };
 
     pause = async () => {
-        const params = {
-            InstanceID: this.instanceId
-        };
-        await this.callAction('AVTransport', 'Pause', params);
+        const params = { InstanceID: this.instanceId };
+        await this.callAVTransport('Pause', params);
     };
 
     stop = async () => {
-        const params = {
-            InstanceID: this.instanceId
-        };
-        await this.callAction('AVTransport', 'Stop', params);
+        const params = { InstanceID: this.instanceId };
+        await this.callAVTransport('Stop', params);
     };
 
     seek = (seconds: number): Promise<UpnpClientResponse> => {
@@ -198,7 +195,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             Unit: 'REL_TIME',
             Target: formatTime(seconds)
         };
-        return this.callAction('AVTransport', 'Seek', params);
+        return this.callAVTransport('Seek', params);
     };
 
     getVolume = async (): Promise<number> => {
@@ -219,8 +216,6 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
     };
 
     getTransportInfo = (): Promise<UpnpClientResponse> => {
-        return this.callAction('AVTransport', 'GetTransportInfo', {
-            InstanceID: this.instanceId
-        });
+        return this.callAVTransport('GetTransportInfo', { InstanceID: this.instanceId });
     };
 }

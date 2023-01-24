@@ -164,10 +164,10 @@ export class UpnpDeviceClient extends EventEmitter {
         const responseDoc = et.parse(response.body.toString());
 
         if (response.statusCode !== 200) {
-            const errorCode = responseDoc.findtext('.//errorCode').toString();
+            const errorCode = parseInt(responseDoc.findtext('.//errorCode').toString());
             const errorDescription = responseDoc.findtext('.//errorDescription').toString().trim();
 
-            throw new UpnpError('EUPNP', `${errorDescription} (${errorCode})`);
+            throw new UpnpError('EUPNP', errorDescription, { errorCode, httpCode: response.statusCode });
         }
 
         // Extract response outputs
@@ -224,7 +224,9 @@ export class UpnpDeviceClient extends EventEmitter {
             const response = await doRequest({ requestOptions: options, bodyString: null });
 
             if (response.statusCode !== 200) {
-                const error = new UpnpError('ESUB', `${response.statusCode} - SUBSCRIBE error`);
+                const error = new UpnpError('ESUB', `${response.statusCode} - SUBSCRIBE error`, {
+                    httpCode: response.statusCode
+                });
                 this.releaseEventingServer();
                 this.emit('error', error);
                 throw error;
@@ -263,9 +265,11 @@ export class UpnpDeviceClient extends EventEmitter {
         const response = await doRequest({ requestOptions: options, bodyString: null });
 
         if (response.statusCode !== 200) {
-            const err = new UpnpError('ESUB', `${response.statusCode} - SUBSCRIBE renewal error`);
+            const error = new UpnpError('ESUB', `${response.statusCode} - SUBSCRIBE renewal error`, {
+                httpCode: response.statusCode
+            });
             // XXX: should we clear the subscription and release the server here ?
-            this.emit('error', err);
+            this.emit('error', error);
             return;
         }
 
@@ -307,8 +311,10 @@ export class UpnpDeviceClient extends EventEmitter {
                 const response = await doRequest({ requestOptions: options, bodyString: null });
 
                 if (response.statusCode !== 200) {
-                    const err = new UpnpError('EUNSUB', `${response.statusCode} - UNSUBSCRIBE error`);
-                    return this.emit('error', err);
+                    const error = new UpnpError('EUNSUB', `${response.statusCode} - UNSUBSCRIBE error`, {
+                        httpCode: response.statusCode
+                    });
+                    return this.emit('error', error);
                 }
 
                 clearTimeout(this.subscriptions[serviceId].timer);
