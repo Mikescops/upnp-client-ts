@@ -42,8 +42,6 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         const onstatus = (event: UpnpEvent) => {
             this.emit('status', event);
 
-            console.log('RECEIVED', event);
-
             if (!receivedState) {
                 // Starting from here we only want state updates.
                 // As the first received event is the full service state, we ignore it.
@@ -64,6 +62,9 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
                         break;
                     case 'STOPPED':
                         this.emit('stopped');
+                        break;
+                    case 'NO_MEDIA_PRESENT':
+                        this.emit('nomedia');
                         break;
                 }
             }
