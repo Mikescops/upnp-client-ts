@@ -12,18 +12,11 @@ export const extractFields = <T>(node: et.Element, fields: string[]): T => {
 };
 
 export const extractBaseUrl = (url: string) => {
-    return url.split('/').slice(0, -1).join('/');
+    return new URL(url).href;
 };
 
-export const buildAbsoluteUrl = (base: string, url: string) => {
-    if (url === '') return '';
-    if (url.substring(0, 4) === 'http') return url;
-    if (url[0] === '/') {
-        const root = base.split('/').slice(0, 3).join('/'); // http://host:port
-        return root + url;
-    } else {
-        return base + '/' + url;
-    }
+export const buildAbsoluteUrl = (baseUrl: string, url: string) => {
+    return new URL(url, baseUrl).toString();
 };
 
 export const resolveService = (serviceId: string) => {
