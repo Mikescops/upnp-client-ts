@@ -78,5 +78,4 @@ This project is based on the [awesome work from @thibauts](https://github.com/th
 
 | [![twitter/mikescops](https://avatars0.githubusercontent.com/u/4266283?s=100&v=4)](https://pixelswap.fr 'Personal Website') |
 | --------------------------------------------------------------------------------------------------------------------------- |
-
-| [Corentin Mors](https://pixelswap.fr/)
+| [Corentin Mors](https://pixelswap.fr/)                                                                                      |

@@ -3,7 +3,6 @@ import { EventEmitter } from 'events';
 import et from 'elementtree';
 import os from 'os';
 import * as address from './utils/ipaddress';
-import debug from 'debug';
 import pkg from '../package.json';
 import { DeviceDescription, Listener, Service, ServiceDescription, Subscription, UpnpClientResponse } from './types';
 import { doRequest, fetch } from './utils/fetch';
@@ -11,13 +10,12 @@ import { parseDeviceDescription, parseEvents, parseServiceDescription, parseTime
 import { resolveService } from './utils/helpers';
 import { urlToHttpOptions } from 'url';
 import { UpnpError } from './errors';
+import { colorizeText, debug } from './utils/debug';
 
 const OS_VERSION = [os.platform(), os.release()].join('/');
 const PACKAGE_VERSION = [pkg.name, pkg.version].join('/');
 
 const SUBSCRIPTION_TIMEOUT = 300;
-
-const logger = debug('upnp-client');
 
 export class UpnpDeviceClient extends EventEmitter {
     url: string;
@@ -47,7 +45,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
                 const events = parseEvents(Buffer.concat(chunks));
 
-                logger('received events %s %d %j', sid, seq, events);
+                debug(`Received events from ${sid}, number ${seq}:\n`, events);
 
                 const keys = Object.keys(this.subscriptions);
                 const sids = keys.map((key) => {
@@ -56,7 +54,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
                 const idx = sids.indexOf(sid);
                 if (idx === -1) {
-                    logger('WARNING unknown SID %s', sid);
+                    debug('WARNING unknown SID:', sid);
                     // silently ignore unknown SIDs
                     return;
                 }
@@ -81,7 +79,7 @@ export class UpnpDeviceClient extends EventEmitter {
             return this.deviceDescription;
         }
 
-        logger('fetch device description');
+        debug('Fetch device description');
         const response = await fetch(this.url);
         const desc = parseDeviceDescription(response.body.toString(), this.url);
         this.deviceDescription = desc; // Store in cache for next call
@@ -95,7 +93,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
         const service = deviceDescription.services[serviceId];
         if (!service) {
-            throw new UpnpError('ENOSERVICE', `Service ${serviceId} not provided by device`);
+            throw new UpnpError('ENOSERVICE', `Service ${colorizeText(serviceId, 'FgMagenta')} not provided by device`);
         }
 
         // Use cache if available
@@ -103,7 +101,7 @@ export class UpnpDeviceClient extends EventEmitter {
             return this.serviceDescriptions[serviceId];
         }
 
-        logger('fetch service description (%s)', serviceId);
+        debug(`Fetch service description (${colorizeText(serviceId, 'FgMagenta')})`);
         const response = await fetch(service.SCPDURL);
         const desc = parseServiceDescription(response.body.toString());
         this.serviceDescriptions[serviceId] = desc; // Store in cache for next call
@@ -155,7 +153,7 @@ export class UpnpDeviceClient extends EventEmitter {
             SOAPACTION: '"' + service.serviceType + '#' + actionName + '"'
         };
 
-        logger('call action %s on service %s with params %j', actionName, serviceId, params);
+        debug(`Call action ${actionName} on service ${colorizeText(serviceId, 'FgMagenta')} with params:\n`, params);
 
         const serviceDescriptions = this.serviceDescriptions;
 
@@ -202,7 +200,7 @@ export class UpnpDeviceClient extends EventEmitter {
         const service = deviceDescription.services[serviceId];
 
         if (!service) {
-            throw new UpnpError('ENOSERVICE', `Service ${serviceId} not provided by device`);
+            throw new UpnpError('ENOSERVICE', `Service ${colorizeText(serviceId, 'FgMagenta')} not provided by device`);
         }
 
         // ... and ensuring the event server is created and listening
@@ -232,11 +230,13 @@ export class UpnpDeviceClient extends EventEmitter {
                 throw error;
             }
 
+            debug(`Subscribed to ${colorizeText(serviceId, 'FgMagenta')}`);
+
             const sid = response.headers['sid'] as string;
             const timeout = parseTimeout(response.headers['timeout'] as string);
 
             const renewTimeout = Math.max(timeout - 30, 30); // renew 30 seconds before expiration
-            logger('renewing subscription to %s in %d seconds', serviceId, renewTimeout);
+            debug(`Renewing subscription to ${colorizeText(serviceId, 'FgMagenta')} in ${renewTimeout} seconds`);
             const timer = setTimeout(() => void this.renew(serviceId, sid, service), renewTimeout * 1000);
 
             this.subscriptions[serviceId] = {
@@ -251,7 +251,7 @@ export class UpnpDeviceClient extends EventEmitter {
     };
 
     renew = async (serviceId: string, sid: string, service: Service): Promise<void> => {
-        logger('renew subscription to %s', serviceId);
+        debug('Renew subscription to', serviceId);
 
         const options = urlToHttpOptions(new URL(service.eventSubURL));
         options.method = 'SUBSCRIBE';
@@ -275,7 +275,7 @@ export class UpnpDeviceClient extends EventEmitter {
         const timeout = parseTimeout(response.headers['timeout'] as string);
 
         const renewTimeout = Math.max(timeout - 30, 30); // renew 30 seconds before expiration
-        logger('renewing subscription to %s in %d seconds', serviceId, renewTimeout);
+        debug(`Renewing subscription to ${colorizeText(serviceId, 'FgMagenta')} in ${renewTimeout} seconds`);
         const timer = setTimeout(() => void this.renew(serviceId, sid, service), renewTimeout * 1000);
         this.subscriptions[serviceId].timer = timer;
     };
@@ -296,7 +296,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
         if (subscription.listeners.length === 0) {
             // If there's no listener left for this service, unsubscribe from it
-            logger('unsubscribe from service %s', serviceId);
+            debug('Unsubscribe from service', serviceId);
 
             const options = urlToHttpOptions(new URL(subscription.url));
 
@@ -330,12 +330,12 @@ export class UpnpDeviceClient extends EventEmitter {
     ensureEventingServer = (): Promise<void> => {
         return new Promise((resolve) => {
             if (!this.listening) {
-                logger('create eventing server');
+                debug('Create eventing server');
                 this.server.listen(0, address.ipv4());
 
                 return this.server.on('listening', () => {
                     this.listening = true;
-                    logger('Server started to listen');
+                    debug('Eventing server started to listen');
                     return resolve();
                 });
             } else {
@@ -346,7 +346,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
     releaseEventingServer = () => {
         if (Object.keys(this.subscriptions).length === 0) {
-            logger('shutdown eventing server');
+            debug('Shutdown eventing server');
             this.server.close();
             this.server = null;
             this.listening = false;
