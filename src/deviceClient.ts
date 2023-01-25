@@ -247,7 +247,6 @@ export class UpnpDeviceClient extends EventEmitter {
             };
         } catch (error) {
             this.emit('error', error);
-            throw error;
         }
     };
 
@@ -324,7 +323,6 @@ export class UpnpDeviceClient extends EventEmitter {
                 this.releaseEventingServer();
             } catch (error) {
                 this.emit('error', error);
-                throw error;
             }
         }
     };

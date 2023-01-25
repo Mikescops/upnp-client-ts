@@ -1,3 +1,7 @@
+const pad = (v: number) => {
+    return v < 10 ? '0' + v.toString() : v.toString();
+};
+
 export const formatTime = (seconds: number): string => {
     let h = 0;
     let m = 0;
@@ -6,14 +10,14 @@ export const formatTime = (seconds: number): string => {
     m = Math.floor((seconds - h * 3600 - m * 0) / 60);
     s = seconds - h * 3600 - m * 60;
 
-    const pad = (v: number): string => {
-        return v < 10 ? '0' + v.toString() : v.toString();
-    };
-
-    return [pad(h), pad(m), pad(s)].join(':');
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
 };
 
 export const parseTime = (time: string): number => {
+    if (!time) {
+        return 0;
+    }
+
     const parts = time.split(':').map(Number);
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
 };
