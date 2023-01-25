@@ -1,13 +1,15 @@
-# UPNP Client for NodeJS
+# UPNP Client and MediaRenderer for NodeJS
 
 A modern UPNP client made in Typescript. Compatible with both ESM and CommonJS.
 
-This project is based on the [awesome work from @thibauts](https://github.com/thibauts/node-upnp-device-client).
+-   UpnpDeviceClient: to connect to any UPNP devices
+-   UpnpMediaRendererClient: to play medias on UPNP devices
+-   also includes DLNA helpers
 
 ## Install
 
 ```bash
-$ npm install upnp-client
+$ npm install <TODO: insert name here when published>
 ```
 
 ## Usage of UpnpDeviceClient
@@ -36,8 +38,45 @@ await client.subscribe('AVTransport');
 // await client.unsubscribe('AVTransport', listener);
 ```
 
+## Usage of UpnpMediaRendererClient
+
+```ts
+import upnp from 'upnp-client';
+
+const client = new upnp.UpnpMediaRendererClient('http://192.168.1.50:54380/MediaRenderer_HT-A9.xml');
+
+// TODO: To be written
+
+await client.play();
+
+await client.pause();
+
+await client.stop();
+
+await client.seek(60);
+```
+
+## Usage of dlnaHelpers
+
+```ts
+// TODO: To be written
+```
+
+## Debugging
+
 Run with debug traces
 
 ```sh
 $ DEBUG=* node index.js
 ```
+
+## Inspiration
+
+This project is based on the [awesome work from @thibauts](https://github.com/thibauts/node-upnp-device-client).
+
+## Maintainer
+
+| [![twitter/mikescops](https://avatars0.githubusercontent.com/u/4266283?s=100&v=4)](https://pixelswap.fr 'Personal Website') |
+| --------------------------------------------------------------------------------------------------------------------------- |
+
+| [Corentin Mors](https://pixelswap.fr/)
