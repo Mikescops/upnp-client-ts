@@ -1,5 +1,11 @@
 # UPNP Client and MediaRenderer for NodeJS
 
+![GitHub package.json version](https://img.shields.io/github/package-json/v/mikescops/upnp-client-ts)
+![npm](https://img.shields.io/npm/v/upnp-client-ts)
+![npm](https://img.shields.io/npm/dw/upnp-client-ts)
+![GitHub](https://img.shields.io/github/license/mikescops/upnp-client-ts)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/mikescops/upnp-client-ts/pr-validation.yml)
+
 A modern UPNP client made in Typescript. Compatible with both ESM and CommonJS.
 
 -   UpnpDeviceClient: to connect to any UPNP devices

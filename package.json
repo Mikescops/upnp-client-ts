@@ -1,5 +1,5 @@
 {
-    "name": "upnp-client",
+    "name": "upnp-client-ts",
     "version": "1.0.0",
     "description": "A modern UPNP client made in Typescript.",
     "source": "src/index.ts",
@@ -9,7 +9,7 @@
     "scripts": {
         "watch": "parcel watch",
         "build": "parcel build",
-        "check": "tsc --noEmit"
+        "lint": "tsc --noEmit && eslint \"src/**/*.ts{,x}\""
     },
     "targets": {
         "module": {
@@ -21,9 +21,15 @@
             "context": "node"
         }
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "keywords": [
+        "upnp",
+        "client",
+        "mediarenderer",
+        "typescript",
+        "module"
+    ],
+    "author": "Corentin Mors <corentin@pixelswap.fr>",
+    "license": "MIT",
     "devDependencies": {
         "@parcel/packager-ts": "^2.8.3",
         "@parcel/transformer-typescript-tsc": "^2.8.3",
@@ -44,5 +50,12 @@
     },
     "@parcel/transformer-js": {
         "inlineFS": false
+    },
+    "files": [
+        "dist"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Mikescops/upnp-client-ts.git"
     }
 }
