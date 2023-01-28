@@ -15,7 +15,7 @@ A modern UPNP client made in Typescript. Compatible with both ESM and CommonJS.
 ## Install
 
 ```bash
-$ npm install <TODO: insert name here when published>
+$ npm install upnp-client-ts
 ```
 
 ## Usage of UpnpDeviceClient
@@ -38,10 +38,14 @@ console.log(serviceDescription);
 const callActionResponse = await client.callAction('AVTransport', 'GetMediaInfo', { InstanceID: 0 });
 console.log(callActionResponse);
 
-await client.subscribe('AVTransport');
+const listener = (event: UpnpEvent) => {
+    console.log(event);
+};
+
+await client.subscribe('AVTransport', listener);
 // Will receive events like { InstanceID: 0, TransportState: 'PLAYING' } when playing media
 
-// await client.unsubscribe('AVTransport', listener);
+await client.unsubscribe('AVTransport', listener);
 ```
 
 ## Usage of UpnpMediaRendererClient
@@ -64,8 +68,13 @@ await client.seek(60);
 
 ## Usage of dlnaHelpers
 
+You can generate DLNA flags and features thanks to the provided helpers, for instance:
+
 ```ts
-// TODO: To be written
+const dlnaContentFeatures =
+    `${upnp.dlnaHelpers.getDlnaSeekModeFeature('range')};` +
+    `${upnp.dlnaHelpers.getDlnaTranscodeFeature(false)};` +
+    `${upnp.dlnaHelpers.defaultFlags.DLNA_STREAMING_TIME_BASED_FLAGS}`;
 ```
 
 ## Debugging
