@@ -57,5 +57,8 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/Mikescops/upnp-client-ts.git"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org"
     }
 }
