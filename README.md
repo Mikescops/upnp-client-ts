@@ -82,7 +82,7 @@ const dlnaContentFeatures =
 Run with debug traces
 
 ```sh
-$ DEBUG=* node index.js
+$ DEBUG=true node index.js
 ```
 
 ## Inspiration
