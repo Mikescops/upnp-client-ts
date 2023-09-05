@@ -23,7 +23,7 @@ $ npm install upnp-client-ts
 ```ts
 import upnp from 'upnp-client';
 
-// Instanciate a client with a device description URL (discovered by SSDP)
+// Instantiate a client with a device description URL (discovered by SSDP)
 const client = new upnp.UpnpDeviceClient('http://192.168.1.50:4873/foo.xml');
 
 // Get the device description
