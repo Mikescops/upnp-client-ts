@@ -109,8 +109,11 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             InstanceID: this.instanceId
         });
 
-        const strTime = response.AbsTime !== 'NOT_IMPLEMENTED' ? response.AbsTime : response.RelTime;
-        return parseTime(strTime);
+        return parseTime(response.RelCount);
+    };
+
+    getPositionInfo = (): Promise<UpnpClientResponse> => {
+        return this.callAVTransport('GetPositionInfo', { InstanceID: this.instanceId });
     };
 
     getDuration = async (): Promise<number> => {
@@ -187,6 +190,16 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
     stop = async () => {
         const params = { InstanceID: this.instanceId };
         await this.callAVTransport('Stop', params);
+    };
+
+    next = async () => {
+        const params = { InstanceID: this.instanceId };
+        await this.callAVTransport('Next', params);
+    };
+
+    previous = async () => {
+        const params = { InstanceID: this.instanceId };
+        await this.callAVTransport('Previous', params);
     };
 
     seek = (seconds: number): Promise<UpnpClientResponse> => {
