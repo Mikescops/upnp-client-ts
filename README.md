@@ -55,15 +55,40 @@ import upnp from 'upnp-client';
 
 const client = new upnp.UpnpMediaRendererClient('http://192.168.1.50:54380/MediaRenderer_HT-A9.xml');
 
-// TODO: To be written
+const options = {
+    autoplay: true,
+    contentType: 'audio/flac',
+    dlnaFeatures: dlnaContentFeatures, // see below for dlnaHelpers
+    metadata: {
+        title: 'My song',
+        creator: 'My creator',
+        artist: 'My artist',
+        album: 'My album',
+        albumArtURI: 'http://127.0.0.1/albumArtURI.jpg',
+        type: 'audio'
+    }
+};
 
-await client.play();
+await client.load('http://127.0.0.1/music.flac', options);
+
+await client.loadNext('http://127.0.0.1/next-music.flac', options);
 
 await client.pause();
 
+await client.play();
+
 await client.stop();
 
+await client.next();
+
+await client.previous();
+
 await client.seek(60);
+
+// you can also call any AVTransport action supported by your device
+const response = await client.callAVTransport('YourCustomAVTransportCall', {
+    InstanceID: client.instanceId
+});
 ```
 
 ## Usage of dlnaHelpers
@@ -75,6 +100,24 @@ const dlnaContentFeatures =
     `${upnp.dlnaHelpers.getDlnaSeekModeFeature('range')};` +
     `${upnp.dlnaHelpers.getDlnaTranscodeFeature(false)};` +
     `${upnp.dlnaHelpers.defaultFlags.DLNA_STREAMING_TIME_BASED_FLAGS}`;
+```
+
+## Tips and tricks
+
+In the metadata you're passing to your speaker, make sure to avoid using accents and special characters.
+
+Here is a simple helper you could use:
+
+```ts
+const escapeSpecialChars = (value: string) => {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove all accents from characters
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/’/g, "'");
+};
 ```
 
 ## Debugging
