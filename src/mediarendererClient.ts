@@ -109,8 +109,11 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
             InstanceID: this.instanceId
         });
 
-        const strTime = response.AbsTime !== 'NOT_IMPLEMENTED' ? response.AbsTime : response.RelTime;
-        return parseTime(strTime);
+        return parseTime(response.RelCount);
+    };
+
+    getPositionInfo = (): Promise<UpnpClientResponse> => {
+        return this.callAVTransport('GetPositionInfo', { InstanceID: this.instanceId });
     };
 
     getDuration = async (): Promise<number> => {
