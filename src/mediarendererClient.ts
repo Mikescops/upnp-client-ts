@@ -192,6 +192,16 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         await this.callAVTransport('Stop', params);
     };
 
+    next = async () => {
+        const params = { InstanceID: this.instanceId };
+        await this.callAVTransport('Next', params);
+    };
+
+    previous = async () => {
+        const params = { InstanceID: this.instanceId };
+        await this.callAVTransport('Previous', params);
+    };
+
     seek = (seconds: number): Promise<UpnpClientResponse> => {
         const params = {
             InstanceID: this.instanceId,
