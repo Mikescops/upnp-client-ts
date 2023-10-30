@@ -161,7 +161,8 @@ export class UpnpDeviceClient extends EventEmitter {
 
         const responseDoc = et.parse(response.body.toString());
 
-        if (response.statusCode !== 200) {
+        if (response.statusCode !== 200 && 
+			responseDoc.findtext('.//errorCode') && responseDoc.findtext('.//errorDescription')) {
             const errorCode = parseInt(responseDoc.findtext('.//errorCode').toString());
             const errorDescription = responseDoc.findtext('.//errorDescription').toString().trim();
 
