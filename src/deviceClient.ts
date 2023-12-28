@@ -162,10 +162,13 @@ export class UpnpDeviceClient extends EventEmitter {
         const responseDoc = et.parse(response.body.toString());
 
         if (response.statusCode !== 200) {
-            const errorCode = parseInt(responseDoc.findtext('.//errorCode').toString());
-            const errorDescription = responseDoc.findtext('.//errorDescription').toString().trim();
+            const errorCode = responseDoc.findtext('.//errorCode').toString() ?? '0';
+            const errorDescription = responseDoc.findtext('.//errorDescription').toString().trim() ?? 'Unknown error';
 
-            throw new UpnpError('EUPNP', errorDescription, { errorCode, httpCode: response.statusCode });
+            throw new UpnpError('EUPNP', errorDescription, {
+                errorCode: parseInt(errorCode),
+                httpCode: response.statusCode
+            });
         }
 
         // Extract response outputs
@@ -177,7 +180,7 @@ export class UpnpDeviceClient extends EventEmitter {
 
         const result = {};
         outputs.forEach((name) => {
-            result[name] = responseDoc.findtext('.//' + name).toString();
+            result[name] = responseDoc.findtext('.//' + name).toString() ?? '';
         });
 
         return result;
