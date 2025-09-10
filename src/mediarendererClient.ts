@@ -8,12 +8,10 @@ const MEDIA_EVENTS = ['status', 'loading', 'playing', 'paused', 'stopped', 'spee
 
 export class UpnpMediaRendererClient extends UpnpDeviceClient {
     instanceId: number;
-    mediaLoaded: boolean;
 
     constructor(url: string) {
         super(url);
         this.instanceId = 0;
-        this.mediaLoaded = false;
 
         // Subscribe / unsubscribe from AVTransport depending
         // on relevant registered / removed event listeners.
@@ -158,9 +156,6 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
         const response = await this.callAVTransport('SetAVTransportURI', paramsSetAVTransportURI);
 
-        // Mark that media has been successfully loaded
-        this.mediaLoaded = true;
-
         if (options.autoplay) {
             return this.play();
         }
@@ -168,18 +163,24 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
         return response;
     };
 
-    loadNext = (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
-        if (!this.mediaLoaded) {
-            throw new Error('No media was loaded first, use load method.');
-        }
-
+    loadNext = async (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
         const params = {
             InstanceID: this.instanceId,
             NextURI: url,
             NextURIMetaData: buildMetadata(url, options.metadata, options).xml
         };
 
-        return this.callAVTransport('SetNextAVTransportURI', params);
+        try {
+            return await this.callAVTransport('SetNextAVTransportURI', params);
+        } catch (error) {
+            // If the action fails because no media is currently loaded/playing (error 501),
+            // automatically fall back to load() instead
+            if (error instanceof AVTransportError && error.message.includes('501')) {
+                return this.load(url, options);
+            }
+            // Re-throw any other errors
+            throw error;
+        }
     };
 
     play = (): Promise<UpnpClientResponse> => {
