@@ -8,10 +8,12 @@ const MEDIA_EVENTS = ['status', 'loading', 'playing', 'paused', 'stopped', 'spee
 
 export class UpnpMediaRendererClient extends UpnpDeviceClient {
     instanceId: number;
+    mediaLoaded: boolean;
 
     constructor(url: string) {
         super(url);
         this.instanceId = 0;
+        this.mediaLoaded = false;
 
         // Subscribe / unsubscribe from AVTransport depending
         // on relevant registered / removed event listeners.
@@ -156,6 +158,9 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
 
         const response = await this.callAVTransport('SetAVTransportURI', paramsSetAVTransportURI);
 
+        // Mark that media has been successfully loaded
+        this.mediaLoaded = true;
+
         if (options.autoplay) {
             return this.play();
         }
@@ -164,7 +169,7 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
     };
 
     loadNext = (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
-        if (!this.listening) {
+        if (!this.mediaLoaded) {
             throw new Error('No media was loaded first, use load method.');
         }
 
