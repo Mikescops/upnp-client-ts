@@ -164,10 +164,6 @@ export class UpnpMediaRendererClient extends UpnpDeviceClient {
     };
 
     loadNext = (url: string, options: MediaRendererOptions): Promise<UpnpClientResponse> => {
-        if (!this.listening) {
-            throw new Error('No media was loaded first, use load method.');
-        }
-
         const params = {
             InstanceID: this.instanceId,
             NextURI: url,
